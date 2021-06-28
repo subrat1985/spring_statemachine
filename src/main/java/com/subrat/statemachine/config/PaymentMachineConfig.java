@@ -23,41 +23,27 @@ public class PaymentMachineConfig extends StateMachineConfigurerAdapter<PaymentS
     public void configure(StateMachineStateConfigurer<PaymentState, PaymentEvent> states) throws Exception {
         states.withStates()
         .initial(PaymentState.NEW)
-        .state(PaymentState.VALIDATE)
-        .state(PaymentState.DEBIT)
-        .state(PaymentState.CREDIT)
-        .state(PaymentState.DEBIT_FAIL)
-        .state(PaymentState.CREDIT_FAIL)
+                .state(PaymentState.VALIDATE,stateContext -> stateContext.getStateMachine().sendEvent(PaymentEvent.VALIDATED))
+                .state(PaymentState.DEBIT,stateContext -> stateContext.getStateMachine().sendEvent(PaymentEvent.DEBITED))
+                .state(PaymentState.CREDIT,stateContext -> stateContext.getStateMachine().sendEvent(PaymentEvent.CREDITED))
+                .state(PaymentState.DEBIT_FAIL,stateContext -> stateContext.getStateMachine().sendEvent(PaymentEvent.DEBIT_DECLINED))
+                .state(PaymentState.CREDIT_FAIL,stateContext -> stateContext.getStateMachine().sendEvent(PaymentEvent.CREDIT_DECLINED))
         .end(PaymentState.COMPLETE);
     }
 
     @Override
     public void configure(StateMachineTransitionConfigurer<PaymentState, PaymentEvent> transitions) throws Exception {
-        transitions.withExternal().source(PaymentState.NEW).target(PaymentState.VALIDATE).event(PaymentEvent.NEW_PAYMENT).action(action1())
+        transitions.withExternal().source(PaymentState.NEW).target(PaymentState.VALIDATE).event(PaymentEvent.NEW_PAYMENT)
         .and()
-        .withExternal().source(PaymentState.VALIDATE).target(PaymentState.DEBIT).event(PaymentEvent.DEBITED).action(action2())
+        .withExternal().source(PaymentState.VALIDATE).target(PaymentState.DEBIT).event(PaymentEvent.VALIDATED)
         .and()
-        .withExternal().source(PaymentState.DEBIT).target(PaymentState.CREDIT).event(PaymentEvent.CREDITED).action(action3())
+        .withExternal().source(PaymentState.DEBIT).target(PaymentState.CREDIT).event(PaymentEvent.DEBITED)
         .and()
-        .withExternal().source(PaymentState.CREDIT).target(PaymentState.COMPLETE).event(PaymentEvent.COMPLETED).action(action4())
+        .withExternal().source(PaymentState.CREDIT).target(PaymentState.COMPLETE).event(PaymentEvent.CREDITED)
         .and()
         .withExternal().source(PaymentState.DEBIT).target(PaymentState.DEBIT_FAIL).event(PaymentEvent.DEBIT_DECLINED)
         .and()
         .withExternal().source(PaymentState.CREDIT).target(PaymentState.CREDIT_FAIL).event(PaymentEvent.CREDIT_DECLINED);
-    }
-
-
-    private Action<PaymentState, PaymentEvent> action1() {
-        return stateContext->stateContext.getStateMachine().sendEvent(PaymentEvent.NEW_PAYMENT);
-    }
-    private Action<PaymentState, PaymentEvent> action2() {
-        return stateContext->stateContext.getStateMachine().sendEvent(PaymentEvent.DEBITED);
-    }
-    private Action<PaymentState, PaymentEvent> action3() {
-        return stateContext->stateContext.getStateMachine().sendEvent(PaymentEvent.CREDITED);
-    }
-    private Action<PaymentState, PaymentEvent> action4() {
-        return stateContext->stateContext.getStateMachine().sendEvent(PaymentEvent.COMPLETED);
     }
 
 
